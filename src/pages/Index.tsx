@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import CosmicBackground from '@/components/CosmicBackground';
+import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import ScenarioInput from '@/components/ScenarioInput';
 import TimelineDisplay from '@/components/TimelineDisplay';
@@ -40,8 +41,9 @@ const Index = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       <CosmicBackground />
+      <Header />
       
-      <div className="relative z-10 container mx-auto px-4 py-16 md:py-24">
+      <div className="relative z-10 container mx-auto px-4 pt-24 pb-16 md:pt-28 md:pb-24">
         <AnimatePresence mode="wait">
           {!reality ? (
             <motion.div
