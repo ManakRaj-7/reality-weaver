@@ -1,27 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import CosmicBackground from '@/components/CosmicBackground';
 import Hero from '@/components/Hero';
 import ScenarioInput from '@/components/ScenarioInput';
 import TimelineDisplay from '@/components/TimelineDisplay';
-import { generateReality } from '@/lib/generateReality';
-
-interface AlternateReality {
-  scenario: string;
-  headline: string;
-  summary: string;
-  timeline: Array<{
-    year: string;
-    title: string;
-    description: string;
-    icon: 'calendar' | 'globe' | 'cpu' | 'users';
-  }>;
-  consequences: {
-    cultural: string;
-    technological: string;
-    political: string;
-  };
-}
+import { generateReality, type AlternateReality } from '@/lib/generateReality';
 
 const Index = () => {
   const [reality, setReality] = useState<AlternateReality | null>(null);
@@ -29,15 +13,21 @@ const Index = () => {
   const [remainingTries, setRemainingTries] = useState(3);
 
   const handleGenerate = async (scenario: string) => {
-    if (remainingTries <= 0) return;
+    if (remainingTries <= 0) {
+      toast.error('No explorations remaining. Create an account to continue!');
+      return;
+    }
     
     setIsLoading(true);
     try {
       const generatedReality = await generateReality(scenario);
       setReality(generatedReality);
       setRemainingTries(prev => prev - 1);
-    } catch (error) {
+      toast.success('Reality generated successfully!');
+    } catch (error: unknown) {
       console.error('Failed to generate reality:', error);
+      const message = error instanceof Error ? error.message : 'Failed to generate reality';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
