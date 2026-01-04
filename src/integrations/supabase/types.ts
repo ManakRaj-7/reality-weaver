@@ -44,7 +44,9 @@ export type Database = {
           created_at: string
           headline: string
           id: string
+          is_public: boolean
           scenario: string
+          share_slug: string | null
           summary: string
           timeline: Json
           user_id: string
@@ -54,7 +56,9 @@ export type Database = {
           created_at?: string
           headline: string
           id?: string
+          is_public?: boolean
           scenario: string
+          share_slug?: string | null
           summary: string
           timeline: Json
           user_id: string
@@ -64,7 +68,9 @@ export type Database = {
           created_at?: string
           headline?: string
           id?: string
+          is_public?: boolean
           scenario?: string
+          share_slug?: string | null
           summary?: string
           timeline?: Json
           user_id?: string

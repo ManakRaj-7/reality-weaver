@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, LogIn, UserPlus, LogOut, History } from 'lucide-react';
+import { Sparkles, LogIn, UserPlus, LogOut, History, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,21 +33,28 @@ const Header = () => {
         </Link>
 
         {/* Auth Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/gallery">
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">Gallery</span>
+            </Link>
+          </Button>
+          
           {user ? (
             <>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/history">
                   <History className="w-4 h-4" />
-                  My Realities
+                  <span className="hidden sm:inline">My Realities</span>
                 </Link>
               </Button>
-              <span className="text-sm text-muted-foreground hidden sm:inline">
+              <span className="text-sm text-muted-foreground hidden md:inline">
                 {user.email?.split('@')[0]}
               </span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </>
           ) : (
