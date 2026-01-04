@@ -10,9 +10,13 @@ import ScenarioInput from '@/components/ScenarioInput';
 import TimelineDisplay from '@/components/TimelineDisplay';
 import { generateReality, type AlternateReality } from '@/lib/generateReality';
 
+interface RealityWithId extends AlternateReality {
+  id?: string;
+}
+
 const Index = () => {
   const { user } = useAuth();
-  const [reality, setReality] = useState<AlternateReality | null>(null);
+  const [reality, setReality] = useState<RealityWithId | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [remainingTries, setRemainingTries] = useState(3);
 
@@ -26,33 +30,34 @@ const Index = () => {
     setIsLoading(true);
     try {
       const generatedReality = await generateReality(scenario);
-      setReality(generatedReality);
       
-      // Decrement tries for guests only
-      if (!user) {
-        setRemainingTries(prev => prev - 1);
-      }
-
+      let savedId: string | undefined;
+      
       // Save to database for logged-in users
       if (user) {
-        const { error } = await supabase.from('realities').insert([{
+        const { data, error } = await supabase.from('realities').insert([{
           user_id: user.id,
           scenario: generatedReality.scenario,
           headline: generatedReality.headline,
           summary: generatedReality.summary,
           timeline: JSON.parse(JSON.stringify(generatedReality.timeline)),
           consequences: JSON.parse(JSON.stringify(generatedReality.consequences)),
-        }]);
+        }]).select('id').single();
 
         if (error) {
           console.error('Failed to save reality:', error);
           toast.error('Reality generated but failed to save');
         } else {
+          savedId = data?.id;
           toast.success('Reality generated and saved!');
         }
       } else {
+        // Decrement tries for guests only
+        setRemainingTries(prev => prev - 1);
         toast.success('Reality generated successfully!');
       }
+
+      setReality({ ...generatedReality, id: savedId });
     } catch (error: unknown) {
       console.error('Failed to generate reality:', error);
       const message = error instanceof Error ? error.message : 'Failed to generate reality';
@@ -64,6 +69,12 @@ const Index = () => {
 
   const handleReset = () => {
     setReality(null);
+  };
+
+  const handleFork = (forkScenario: string) => {
+    setReality(null);
+    // Small delay to allow animation, then generate
+    setTimeout(() => handleGenerate(forkScenario), 300);
   };
 
   return (
@@ -96,7 +107,12 @@ const Index = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <TimelineDisplay reality={reality} onReset={handleReset} />
+              <TimelineDisplay 
+                reality={reality} 
+                onReset={handleReset} 
+                realityId={reality.id}
+                onFork={user ? handleFork : undefined}
+              />
             </motion.div>
           )}
         </AnimatePresence>
