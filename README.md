@@ -1,27 +1,27 @@
 # 🌌 Reality Weaver – Parallel Reality Generator
 
 Reality Weaver is an interactive web application that explores **alternate versions of reality**.  
-By changing a single event in history, technology, or civilization, users can visualize how the world *might* have evolved differently.
+It allows users to ask **“What if?”** questions and visualize how a single change could reshape **history, technology, and human civilization**.
 
-Built using **Lovable Go**, this project combines a modern frontend with serverless AI-powered backend logic.
+This project was built using **Lovable Go**, combining a modern frontend with a serverless, AI-powered backend.
 
 ---
 
-## 🚀 Live Demo
+## 🚀 Live Website
 
-🔗 **Website:** https://timeline-seed.lovable.app 
-🔗 **Repository:** https://github.com/ManakRaj-7/reality-weaver
+🔗 **Live Demo:** https://timeline-seed.lovable.app/  
+🔗 **GitHub Repository:** https://github.com/ManakRaj-7/reality-weaver
 
 ---
 
 ## ✨ Features
 
-- 🌍 **Parallel Reality Generator** – Explore “What if?” scenarios
-- ⚡ **AI-powered timeline generation**
-- 👤 **Guest mode access** (limited explorations)
+- 🌍 **Parallel Reality Generator** – Explore alternate timelines using “What if?” scenarios  
+- 🧠 **AI-powered timeline generation**
+- 👤 **Guest mode access** with limited explorations
 - 🎨 **Modern animated UI** with cosmic visuals
-- 🔐 **Authentication-ready architecture**
-- ☁️ **Serverless backend using Supabase Functions**
+- ⚡ **Fast, responsive frontend**
+- ☁️ **Serverless backend powered by Supabase**
 
 ---
 
@@ -35,9 +35,8 @@ Built using **Lovable Go**, this project combines a modern frontend with serverl
 
 ### Backend
 - 🧠 Lovable Go
-- 🗄️ Supabase
 - ☁️ Supabase Edge Functions
-- 🧾 PostgreSQL (via Supabase)
+- 🗄️ PostgreSQL (Supabase)
 
 ---
 
