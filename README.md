@@ -9,7 +9,7 @@ Built using **Lovable Go**, this project combines a modern frontend with serverl
 
 ## 🚀 Live Demo
 
-🔗 **Website:** https://e-seed.lovable.app  
+🔗 **Website:** [https://e-seed.lovable.app](https://timeline-seed.lovable.app/)  
 🔗 **Repository:** https://github.com/ManakRaj-7/reality-weaver
 
 ---
