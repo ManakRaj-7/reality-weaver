@@ -95,6 +95,7 @@ const History = () => {
           <TimelineDisplay
             reality={selectedReality}
             onReset={() => setSelectedReality(null)}
+            realityId={selectedReality.id}
           />
         </div>
       </div>
