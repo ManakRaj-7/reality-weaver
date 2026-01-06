@@ -1,146 +1,137 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import CosmicBackground from '@/components/CosmicBackground';
+import Header from '@/components/Header';
+import Hero from '@/components/Hero';
+import ScenarioInput from '@/components/ScenarioInput';
+import TimelineDisplay from '@/components/TimelineDisplay';
+import { generateReality, type AlternateReality } from '@/lib/generateReality';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const systemPrompt = `You are an alternate reality generator. Given a "What if?" scenario, you create detailed, imaginative, and internally consistent alternate timelines.
-
-Your response MUST be valid JSON matching this exact structure:
-{
-  "scenario": "A short title summarizing the alternate reality (without 'What if')",
-  "headline": "A compelling news headline that could appear in this alternate reality today",
-  "summary": "A 2-3 sentence overview of how this change affected history",
-  "timeline": [
-    {
-      "year": "The year or time period",
-      "title": "Event title",
-      "description": "What happened and why it matters",
-      "icon": "calendar" | "globe" | "cpu" | "users"
-    }
-  ],
-  "consequences": {
-    "cultural": "How society, art, and daily life changed",
-    "technological": "How technology evolved differently",
-    "political": "How power structures and governance changed"
-  }
+interface RealityWithId extends AlternateReality {
+  id?: string;
 }
 
-Guidelines:
-- Create 4-5 timeline events spanning from the divergence point to present day
-- Be creative but logical - each event should follow from the previous
-- The headline should be attention-grabbing and feel authentic to that reality
-- Use varied icons: "calendar" for key dates, "globe" for global events, "cpu" for tech, "users" for social changes
-- Keep descriptions concise but evocative
-- Be bold and imaginative - this is speculative fiction, not academic history`;
+const Index = () => {
+  const { user } = useAuth();
+  const [reality, setReality] = useState<RealityWithId | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [remainingTries, setRemainingTries] = useState(3);
 
-serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { scenario } = await req.json();
+  const handleGenerate = async (scenario: string) => {
+    // Guest users have limited tries
+    if (!user && remainingTries <= 0) {
+      toast.error('No explorations remaining. Create an account to continue!');
+      return;
+    }
     
-    if (!scenario) {
-      return new Response(
-        JSON.stringify({ error: 'Scenario is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('API key not configured');
-      return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Generating reality, input length:', scenario.length);
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: scenario }
-        ],
-        temperature: 0.9,
-      }),
-    });
-
-    if (!response.ok) {
-      console.error('AI gateway error:', response.status);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please try again later.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate reality' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      console.error('Empty AI response');
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate reality content' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse the JSON from the response, handling potential markdown code blocks
-    let reality;
+    setIsLoading(true);
     try {
-      // Remove markdown code blocks if present
-      let jsonString = content;
-      if (content.includes('```')) {
-        jsonString = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const generatedReality = await generateReality(scenario);
+      
+      let savedId: string | undefined;
+      
+      // Save to database for logged-in users
+      if (user) {
+        const { data, error } = await supabase.from('realities').insert([{
+          user_id: user.id,
+          scenario: generatedReality.scenario,
+          headline: generatedReality.headline,
+          summary: generatedReality.summary,
+          timeline: JSON.parse(JSON.stringify(generatedReality.timeline)),
+          consequences: JSON.parse(JSON.stringify(generatedReality.consequences)),
+        }]).select('id').single();
+
+        if (error) {
+          console.error('Failed to save reality:', error);
+          toast.error('Reality generated but failed to save');
+        } else {
+          savedId = data?.id;
+          toast.success('Reality generated and saved!');
+        }
+      } else {
+        // Decrement tries for guests only
+        setRemainingTries(prev => prev - 1);
+        toast.success('Reality generated successfully!');
       }
-      reality = JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error('JSON parse error');
-      return new Response(
-        JSON.stringify({ error: 'Failed to parse reality data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+
+      setReality({ ...generatedReality, id: savedId });
+    } catch (error: unknown) {
+      console.error('Failed to generate reality:', error);
+      const message = error instanceof Error ? error.message : 'Failed to generate reality';
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    console.log('Reality generated successfully');
+  const handleReset = () => {
+    setReality(null);
+  };
 
-    return new Response(
-      JSON.stringify(reality),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  const handleFork = (forkScenario: string) => {
+    setReality(null);
+    // Small delay to allow animation, then generate
+    setTimeout(() => handleGenerate(forkScenario), 300);
+  };
 
-  } catch (error: unknown) {
-    console.error('Generation error:', error instanceof Error ? error.message : 'Unknown error');
-    return new Response(
-      JSON.stringify({ error: 'Failed to generate reality' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-});
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      <CosmicBackground />
+      <Header />
+      
+      <div className="relative z-10 container mx-auto px-4 pt-24 pb-16 md:pt-28 md:pb-24">
+        <AnimatePresence mode="wait">
+          {!reality ? (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Hero />
+              <ScenarioInput
+                onGenerate={handleGenerate}
+                isLoading={isLoading}
+                remainingTries={remainingTries}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="timeline"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TimelineDisplay 
+                reality={reality} 
+                onReset={handleReset} 
+                realityId={reality.id}
+                onFork={user ? handleFork : undefined}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 py-8 text-center">
+        <p className="text-muted-foreground text-sm">
+          {user ? (
+            <>Explore unlimited realities and view your history anytime</>
+          ) : remainingTries > 0 ? (
+            <>Login to save your alternate realities and explore unlimited possibilities</>
+          ) : (
+            <span className="text-secondary">Create an account to continue exploring infinite realities</span>
+          )}
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default Index;
