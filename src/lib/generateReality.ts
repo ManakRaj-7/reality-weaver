@@ -26,10 +26,27 @@ export const generateReality = async (scenario: string): Promise<AlternateRealit
 
   if (error) {
     console.error('Error generating reality:', error);
-    throw new Error(error.message || 'Failed to generate reality');
+    
+    // Check for specific error types
+    const errorMessage = error.message?.toLowerCase() || '';
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+      throw new Error('Too many requests. Please wait a moment and try again.');
+    }
+    if (errorMessage.includes('credits') || errorMessage.includes('402')) {
+      throw new Error('AI service temporarily unavailable. Please try again later.');
+    }
+    
+    throw new Error('Failed to generate reality. Please try again.');
   }
 
-  if (data.error) {
+  if (data?.error) {
+    // Handle specific error messages from edge function
+    if (data.error.includes('Rate limit')) {
+      throw new Error('Too many requests. Please wait a moment and try again.');
+    }
+    if (data.error.includes('credits')) {
+      throw new Error('AI service temporarily unavailable. Please try again later.');
+    }
     throw new Error(data.error);
   }
 
