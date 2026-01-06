@@ -26,7 +26,7 @@ const SharedReality = () => {
 
       const { data, error: fetchError } = await supabase
         .from('realities')
-        .select('scenario, headline, summary, timeline, consequences')
+        .select('*')
         .eq('share_slug', slug)
         .eq('is_public', true)
         .maybeSingle();
@@ -45,7 +45,6 @@ const SharedReality = () => {
           consequences: data.consequences as unknown as AlternateReality['consequences'],
         });
       }
-
       setLoading(false);
     };
 
@@ -80,9 +79,7 @@ const SharedReality = () => {
             <h1 className="text-3xl font-bold font-display text-foreground mb-4">
               Reality Not Found
             </h1>
-            <p className="text-muted-foreground mb-6">
-              {error || 'This reality does not exist'}
-            </p>
+            <p className="text-muted-foreground mb-6">{error || 'This reality does not exist'}</p>
             <Button variant="hero" onClick={() => navigate('/')}>
               Explore Your Own Reality
             </Button>
