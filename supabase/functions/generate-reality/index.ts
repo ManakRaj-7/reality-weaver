@@ -53,14 +53,14 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
+      console.error('API key not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Generating reality for scenario:', scenario);
+    console.log('Generating reality, input length:', scenario.length);
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -79,8 +79,7 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      console.error('AI gateway error:', response.status);
       
       if (response.status === 429) {
         return new Response(
@@ -106,7 +105,7 @@ serve(async (req) => {
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      console.error('No content in AI response');
+      console.error('Empty AI response');
       return new Response(
         JSON.stringify({ error: 'Failed to generate reality content' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -123,14 +122,14 @@ serve(async (req) => {
       }
       reality = JSON.parse(jsonString);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', parseError, content);
+      console.error('JSON parse error');
       return new Response(
         JSON.stringify({ error: 'Failed to parse reality data' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Successfully generated reality:', reality.scenario);
+    console.log('Reality generated successfully');
 
     return new Response(
       JSON.stringify(reality),
@@ -138,10 +137,9 @@ serve(async (req) => {
     );
 
   } catch (error: unknown) {
-    console.error('Error in generate-reality function:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Generation error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'Failed to generate reality' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
