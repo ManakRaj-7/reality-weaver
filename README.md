@@ -114,9 +114,7 @@ Built with **Lovable**, combining a modern React frontend with serverless AI-pow
 ├── tsconfig.json
 └── README.md
 ```
-
 ---
-
 ## 🚀 Getting Started
 
 1. **Clone the repository**
